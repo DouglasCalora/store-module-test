@@ -1,5 +1,5 @@
 import { setAxios } from './setAxios'
-import { storeModule } from './storeModule'
+import storeModule from './storeModule'
 
 export {
   setAxios,
