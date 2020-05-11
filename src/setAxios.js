@@ -1,7 +1,8 @@
-const api = null
-const setAxios = axios => api = axios
+let api = null
 
-console.log(api)
+const setAxios = axios => {
+  api = axios
+}
 
 export {
   api,
