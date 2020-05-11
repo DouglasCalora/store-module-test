@@ -1,10 +1,17 @@
 import Vue from 'vue'
-import api from 'axios'
+// import api from '../../node_modules/axios'
+// import api2 from 'axios'
 
-export default function (resource, options = {}) {
+const api = axios => axios
+
+const storeModule = (resource, options = {}) => {
   if (!resource) {
     throw new Error('Resource name must be specified.')
   }
+
+  // const api = (await import('axios')).default
+  // const api = await api3.default
+  // console.log(api.defaults, api2.defaults, '>>')
 
   function call (name, ...parameters) {
     if (typeof options[name] === 'function') {
@@ -12,54 +19,33 @@ export default function (resource, options = {}) {
     }
   }
 
-  const idAttribute = options.idAttribute || 'id'
+  const idAttribute = options.idAttribute || 'uuid'
   const perPage = options.perPage || 12
 
   const methods = options.methods || [
-    'CREATE',
-    'DESTROY',
-    'FETCH_FILTERS',
-    'FETCH_FORM',
     'FETCH_LIST',
     'FETCH_SINGLE',
+    'FETCH_FIELDS',
+    'CREATE',
+    'UPDATE',
     'REPLACE',
-    'UPDATE'
+    'DESTROY'
   ]
 
-  const hasCreate = methods.includes('CREATE')
-  const hasDestroy = methods.includes('DESTROY')
-  const hasFetchFilters = methods.includes('FETCH_FILTERS')
-  const hasFetchForm = methods.includes('FETCH_FORM')
   const hasFetchList = methods.includes('FETCH_LIST')
   const hasFetchSingle = methods.includes('FETCH_SINGLE')
-  const hasReplace = methods.includes('REPLACE')
+  const hasFetchFields = methods.includes('FETCH_FIELDS')
+  const hasCreate = methods.includes('CREATE')
   const hasUpdate = methods.includes('UPDATE')
+  const hasReplace = methods.includes('REPLACE')
+  const hasDestroy = methods.includes('DESTROY')
 
   // States
   const stateData = {
-    filters: {},
+    fields: [],
     list: [],
-    totalPages: 0
-  }
-
-  if (hasCreate) {
-    stateData.isFetchingSingle = false
-    stateData.fetchSingleError = null
-  }
-
-  if (hasDestroy) {
-    stateData.isDestroying = false
-    stateData.destroyError = null
-  }
-
-  if (hasFetchFilters) {
-    stateData.isFetchingFilters = false
-    stateData.fetchFiltersError = null
-  }
-
-  if (hasFetchForm) {
-    stateData.isFetchingForm = false
-    stateData.fetchFormError = null
+    totalPages: 0,
+    filters: []
   }
 
   if (hasFetchList) {
@@ -72,14 +58,29 @@ export default function (resource, options = {}) {
     stateData.fetchSingleError = null
   }
 
-  if (hasReplace) {
-    stateData.isReplacing = false
-    stateData.replaceError = null
+  if (hasFetchFields) {
+    stateData.isFetchingFields = false
+    stateData.fetchFieldsError = null
+  }
+
+  if (hasCreate) {
+    stateData.isFetchingSingle = false
+    stateData.fetchSingleError = null
   }
 
   if (hasUpdate) {
     stateData.isUpdating = false
     stateData.updateError = null
+  }
+
+  if (hasReplace) {
+    stateData.isReplacing = false
+    stateData.replaceError = null
+  }
+
+  if (hasDestroy) {
+    stateData.isDestroying = false
+    stateData.destroyError = null
   }
 
   Object.assign(stateData, options.state || {})
@@ -88,31 +89,30 @@ export default function (resource, options = {}) {
   const getters = {
     list: state => state.list,
 
-    filters: state => state.filters,
+    fields: state => state.fields,
 
     totalPages: state => state.totalPages,
 
     byId: state => id => state.list.find(item => item[idAttribute] === id),
 
     isLoading: state => (
-      state.isCreating ||
-      state.isDestroying ||
-      state.isFetchingFilters ||
       state.isFetchingList ||
       state.isFetchingSingle ||
+      state.isFetchingFields ||
+      state.isCreating ||
+      state.isUpdating ||
       state.isReplacing ||
-      state.isUpdating
+      state.isDestroying
     ),
 
     hasErrors: state => (
-      state.createError !== null ||
-      state.destroyError !== null ||
-      state.fetchFormError !== null ||
-      state.fetchFiltersError !== null ||
       state.fetchListError !== null ||
       state.fetchSingleError !== null ||
+      state.fetchFieldsError !== null ||
+      state.createError !== null ||
+      state.updateError !== null ||
       state.replaceError !== null ||
-      state.updateError !== null
+      state.destroyError !== null
     )
   }
 
@@ -120,97 +120,6 @@ export default function (resource, options = {}) {
 
   // Mutations
   const mutations = {}
-
-  if (hasCreate) {
-    mutations.createStart = state => {
-      state.isCreating = true
-      call('onCreateStart', state)
-    }
-
-    mutations.createSuccess = (state, response) => {
-      const { data } = response
-
-      if (data) {
-        state.list.push(data)
-      }
-
-      state.createError = null
-      state.isCreating = false
-      call('onCreateSuccess', state, response)
-    }
-
-    mutations.createError = (state, error) => {
-      state.createError = error
-      state.isCreating = false
-      call('onCreateError', state, error)
-    }
-  }
-
-  if (hasDestroy) {
-    mutations.destroyStart = state => {
-      state.isDestroying = true
-      call('onDestroyStart', state)
-    }
-
-    mutations.destroySuccess = (state, id) => {
-      const index = state.list.findIndex(item => item[idAttribute] === id)
-
-      if (~index) {
-        Vue.delete(state.list, index)
-      }
-
-      state.destroyError = null
-      state.isDestroying = false
-      call('onDestroySuccess', state, id)
-    }
-
-    mutations.destroyError = (state, error) => {
-      state.destroyError = error
-      state.isDestroying = false
-      call('onDestroyError', state, error)
-    }
-  }
-
-  if (hasFetchFilters) {
-    mutations.fetchFiltersStart = state => {
-      state.isFetchingFilters = true
-      call('onFetchFiltersStart', state)
-    }
-
-    mutations.fetchFiltersSuccess = (state, response) => {
-      const { fields } = response.data
-      state.filters = fields
-
-      state.fetchFiltersError = null
-      state.isFetchingFilters = false
-      call('onfetchFiltersSuccess', state, response)
-    }
-
-    mutations.fetchFiltersError = (state, error) => {
-      state.fetchFiltersError = error
-      state.isFetchingFilters = false
-      call('onFetchFiltersError', state, error)
-    }
-  }
-
-  if (hasFetchForm) {
-    mutations.fetchFormStart = state => {
-      state.isFetchingForm = true
-      call('onFetchFormStart', state)
-    }
-
-    mutations.fetchFormSuccess = (state, { errors, fields }) => {
-      state.fetchFormError = null
-      state.isFetchingForm = false
-      call('onfetchFormSuccess', state, response)
-    }
-
-    mutations.fetchFormError = (state, error) => {
-      state.fetchFormError = error
-      state.isFetchingForm = false
-      call('onFetchFormError', state, error)
-    }
-  }
 
   if (hasFetchList) {
     mutations.fetchListStart = state => {
@@ -249,15 +158,15 @@ export default function (resource, options = {}) {
     }
 
     mutations.fetchSingleSuccess = (state, response) => {
-      const { result } = response.data
+      const { data } = response
 
-      if (result) {
-        const index = state.list.findIndex(
-          item => item[idAttribute] === result[idAttribute]
-        )
+      const index = state.list.findIndex(
+        item => item[idAttribute] === data[idAttribute]
+      )
 
-        ~index ? Vue.set(state.list, index, result) : state.list.push(result)
-      }
+      ~index
+        ? Vue.set(state.list, index, data)
+        : state.list.push(data)
 
       state.fetchSingleError = null
       state.isFetchingSingle = false
@@ -271,32 +180,53 @@ export default function (resource, options = {}) {
     }
   }
 
-  if (hasReplace) {
-    mutations.replaceStart = state => {
-      state.isReplacing = true
-      call('onReplaceStart', state)
+  if (hasFetchFields) {
+    mutations.fetchFieldsStart = state => {
+      state.isFetchingFields = true
+      call('onFetchFieldsStart', state)
     }
 
-    mutations.replaceSuccess = (state, response) => {
-      const { data } = response
+    mutations.fetchFieldsSuccess = (state, response) => {
+      const results = response.data.actions.pOST
 
-      const index = state.list.findIndex(
-        item => item[idAttribute] === data[idAttribute]
-      )
-
-      if (~index) {
-        Vue.set(state.list, index, data)
+      for (const key in results) {
+        state.fields.push(results[key])
       }
 
-      state.replaceError = null
-      state.isReplacing = false
-      call('onReplaceSuccess', state, response)
+      state.fetchFieldsError = null
+      state.isFetchingFields = false
+      call('onfetchFieldsSuccess', state, response)
     }
 
-    mutations.replaceError = (state, error) => {
-      state.replaceError = error
-      state.isReplacing = false
-      call('onReplaceError', state, error)
+    mutations.fetchFieldsError = (state, error) => {
+      state.fetchFieldsError = error
+      state.isFetchingFields = false
+      call('onFetchFieldsError', state, error)
+    }
+  }
+
+  if (hasCreate) {
+    mutations.createStart = state => {
+      state.isCreating = true
+      call('onCreateStart', state)
+    }
+
+    mutations.createSuccess = (state, response) => {
+      const { data } = response
+
+      if (data) {
+        state.list.push(data)
+      }
+
+      state.createError = null
+      state.isCreating = false
+      call('onCreateSuccess', state, response)
+    }
+
+    mutations.createError = (state, error) => {
+      state.createError = error
+      state.isCreating = false
+      call('onCreateError', state, error)
     }
   }
 
@@ -330,69 +260,62 @@ export default function (resource, options = {}) {
     }
   }
 
-  Object.assign(mutations, options.mutations || {})
+  if (hasReplace) {
+    mutations.replaceStart = state => {
+      state.isReplacing = true
+      call('onReplaceStart', state)
+    }
 
-  // Actions
-  const actions = {}
+    mutations.replaceSuccess = (state, response) => {
+      const { data } = response
 
-  if (hasCreate) {
-    actions.create = ({ commit }, { payload, url } = {}) => {
-      commit('createStart')
-      url = url || `/${resource}/`
+      const index = state.list.findIndex(
+        item => item[idAttribute] === data[idAttribute]
+      )
 
-      return api.post(url, payload).then(response => {
-        commit('createSuccess', response)
-        return response
-      }).catch(error => {
-        commit('createError', error)
-        return Promise.reject(error)
-      })
+      if (~index) {
+        Vue.set(state.list, index, data)
+      }
+
+      state.replaceError = null
+      state.isReplacing = false
+      call('onReplaceSuccess', state, response)
+    }
+
+    mutations.replaceError = (state, error) => {
+      state.replaceError = error
+      state.isReplacing = false
+      call('onReplaceError', state, error)
     }
   }
 
   if (hasDestroy) {
-    actions.destroy = ({ commit }, { id, params } = {}) => {
-      commit('destroyStart')
+    mutations.destroyStart = state => {
+      state.isDestroying = true
+      call('onDestroyStart', state)
+    }
 
-      return api.delete(`/${resource}/${id}/`, { params }).then(response => {
-        commit('destroySuccess', id)
-        return response
-      }).catch(error => {
-        commit('destroyError', error)
-        return Promise.reject(error)
-      })
+    mutations.destroySuccess = (state, id) => {
+      const index = state.list.findIndex(item => item[idAttribute] === id)
+
+      if (~index) {
+        Vue.delete(state.list, index)
+      }
+
+      state.destroyError = null
+      state.isDestroying = false
+      call('onDestroySuccess', state, id)
+    }
+
+    mutations.destroyError = (state, error) => {
+      state.destroyError = error
+      state.isDestroying = false
+      call('onDestroyError', state, error)
     }
   }
 
-  if (hasFetchFilters) {
-    actions.fetchFilters = ({ commit }, { params, url } = {}) => {
-      commit('fetchFiltersStart')
-      url = url || options.fetchFiltersURL || `/${resource}/filters/`
-
-      return api.get(url, { params }).then(response => {
-        commit('fetchFiltersSuccess', response)
-        return response
-      }).catch(error => {
-        commit('fetchFiltersError', error)
-        return Promise.reject(error)
-      })
-    }
-  }
-
-  if (hasFetchForm) {
-    actions.fetchForm = ({ commit }, { id, params, url } = {}) => {
-      commit('fetchFormStart')
-      url = url || `/${resource}/${id ? `edit/${id}` : 'new'}/`
-
-      return api.get(url, { params }).then(response => {
-        commit('fetchFormSuccess', response)
-        return response
-      }).catch(error => {
-        commit('fetchFormError', error)
-        return Promise.reject(error)
-      })
-    }
-  }
+  // Actions
+  const actions = {}
 
   if (hasFetchList) {
     actions.fetchList = (
@@ -401,7 +324,7 @@ export default function (resource, options = {}) {
     ) => {
       const params = {
         ...filters,
-        limit: limit || perPage,
+        limit,
         offset: (page - 1) * (limit || perPage),
         ordering: ordering.length ? ordering.join(',') : null,
         search
@@ -421,18 +344,59 @@ export default function (resource, options = {}) {
   }
 
   if (hasFetchSingle) {
-    actions.fetchSingle = ({ commit }, { form, id, params, url } = {}) => {
+    actions.fetchSingle = ({ commit }, { id, params, url } = {}) => {
       commit('fetchSingleStart')
-
-      url = url || (form
-        ? `/${resource}/${id ? `${id}/edit` : 'new'}/`
-        : options.fetchSingleURL || `/${resource}/${id}/`)
+      url = url || options.fetchSingleURL || `/${resource}/${id}/`
 
       return api.get(url, { params }).then(response => {
         commit('fetchSingleSuccess', response)
         return response
       }).catch(error => {
         commit('fetchSingleError', error)
+        return Promise.reject(error)
+      })
+    }
+  }
+
+  if (hasFetchFields) {
+    actions.fetchFields = ({ commit }, { params, url } = {}) => {
+      commit('fetchFieldsStart')
+      url = url || options.fetchFieldsURL || `/${resource}/fields/`
+
+      return api.get(url, { params }).then(response => {
+        commit('fetchFieldsSuccess', response)
+        return response
+      }).catch(error => {
+        commit('fetchFieldsError', error)
+        return Promise.reject(error)
+      })
+    }
+  }
+
+  if (hasCreate) {
+    actions.create = ({ commit }, { payload, url } = {}) => {
+      commit('createStart')
+      url = url || `/${resource}/`
+
+      return api.post(url, payload).then(response => {
+        commit('createSuccess', response)
+        return response
+      }).catch(error => {
+        commit('createError', error)
+        return Promise.reject(error)
+      })
+    }
+  }
+
+  if (hasUpdate) {
+    actions.update = ({ commit }, { id, payload } = {}) => {
+      commit('updateStart')
+
+      return api.patch(`/${resource}/${id}`, payload).then(response => {
+        commit('updateSuccess', response)
+        return response
+      }).catch(error => {
+        commit('updateError', error)
         return Promise.reject(error)
       })
     }
@@ -453,21 +417,19 @@ export default function (resource, options = {}) {
     }
   }
 
-  if (hasUpdate) {
-    actions.update = ({ commit }, { id, payload } = {}) => {
-      commit('updateStart')
+  if (hasDestroy) {
+    actions.destroy = ({ commit }, { id, params } = {}) => {
+      commit('destroyStart')
 
-      return api.patch(`/${resource}/${id}`, payload).then(response => {
-        commit('updateSuccess', response)
+      return api.delete(`/${resource}/${id}/`, { params }).then(response => {
+        commit('destroySuccess', id)
         return response
       }).catch(error => {
-        commit('updateError', error)
+        commit('destroyError', error)
         return Promise.reject(error)
       })
     }
   }
-
-  Object.assign(actions, options.actions || {})
 
   return {
     namespaced: true,
@@ -477,4 +439,9 @@ export default function (resource, options = {}) {
     mutations,
     actions
   }
+}
+
+export {
+  api,
+  storeModule
 }
