@@ -5,7 +5,7 @@
 
 ### Installation
 
-```js
+```
 npm i store-module-test
 ```
 
@@ -18,7 +18,7 @@ import VuexStoreModule from 'vuex-store-module'
 import axios from 'axios'
 
 const storeModule = new VuexStoreModule({ apiService: axios })
-// you can pass your own api like axios to apiService
+// you can pass your own API like axios to apiService
 
 export default storeModule
 ```
@@ -35,7 +35,7 @@ export default storeModule.createStoreModule('posts')
 
 ```js
 const storeModule = new VuexStoreModule({
-	apiService: undefined // intance of API
+  apiService: undefined // intance of API
 })
 
 storeModule.createModule(

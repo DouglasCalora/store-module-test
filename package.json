@@ -1,6 +1,6 @@
 {
   "name": "store-module-test",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "test publish",
   "keywords": ["vue", "vuex", "store", "vuex store", "generic", "generic store"],
   "main": "dist/storeModule.js",
