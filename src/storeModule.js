@@ -3,7 +3,7 @@ import Vue from 'vue'
 export default class {
   constructor (options = {}) {
     if (!options.apiService) {
-      throw new Error('Please provide an API service')
+      throw new Error('Please provide an API like axios')
     }
 
     // set api config
@@ -227,7 +227,8 @@ export default class {
         call('onFetchListStart', state)
       }
 
-      mutations.fetchListSuccess = (state, response, increment) => {
+      mutations.fetchListSuccess = (state, payload = {}) => {
+        const { response, increment } = payload
         const { results, count } = response.data
 
         increment
@@ -240,7 +241,9 @@ export default class {
         call('onfetchListSuccess', state, response)
       }
 
-      mutations.fetchListError = (state, error, increment) => {
+      mutations.fetchListError = (state, payload = {}) => {
+        const { error, increment } = payload
+
         if (!increment) {
           state.list = []
         }
@@ -349,7 +352,7 @@ export default class {
         commit('createStart')
         url = url || `/${resource}/`
   
-        return this.api.post(url, payload).then(response => {
+        return api.post(url, payload).then(response => {
           commit('createSuccess', response)
           return response
         }).catch(error => {
@@ -363,7 +366,7 @@ export default class {
       actions.destroy = ({ commit }, { id, params } = {}) => {
         commit('destroyStart')
   
-        return this.api.delete(`/${resource}/${id}/`, { params }).then(response => {
+        return api.delete(`/${resource}/${id}/`, { params }).then(response => {
           commit('destroySuccess', id)
           return response
         }).catch(error => {
@@ -378,7 +381,7 @@ export default class {
         commit('fetchFiltersStart')
         url = url || options.fetchFiltersURL || `/${resource}/filters/`
   
-        return this.api.get(url, { params }).then(response => {
+        return api.get(url, { params }).then(response => {
           commit('fetchFiltersSuccess', response)
           return response
         }).catch(error => {
@@ -393,7 +396,7 @@ export default class {
         commit('fetchFormStart')
         url = url || `/${resource}/${id ? `edit/${id}` : 'new'}/`
 
-        return this.api.get(url, { params }).then(response => {
+        return api.get(url, { params }).then(response => {
           commit('fetchFormSuccess', response)
           return response
         }).catch(error => {
@@ -419,11 +422,11 @@ export default class {
         commit('fetchListStart')
         url = url || options.replaceURL || `/${resource}/`
 
-        return this.api.get(url, { params }).then(response => {
-          commit('fetchListSuccess', response, increment)
+        return api.get(url, { params }).then(response => {
+          commit('fetchListSuccess', { response, increment })
           return response
         }).catch(error => {
-          commit('fetchListError', error, increment)
+          commit('fetchListError', { error, increment })
           return Promise.reject(error)
         })
       }
@@ -437,7 +440,7 @@ export default class {
           ? `/${resource}/${id ? `${id}/edit` : 'new'}/`
           : options.fetchSingleURL || `/${resource}/${id}/`)
 
-        return this.api.get(url, { params }).then(response => {
+        return api.get(url, { params }).then(response => {
           commit('fetchSingleSuccess', response)
           return response
         }).catch(error => {
@@ -452,7 +455,7 @@ export default class {
         commit('replaceStart')
         url = url || options.replaceURL || `/${resource}/${id}/`
 
-        return this.api.put(url, payload).then(response => {
+        return api.put(url, payload).then(response => {
           commit('replaceSuccess', response)
           return response
         }).catch(error => {
@@ -466,7 +469,7 @@ export default class {
       actions.update = ({ commit }, { id, payload } = {}) => {
         commit('updateStart')
 
-        return this.api.patch(`/${resource}/${id}`, payload).then(response => {
+        return api.patch(`/${resource}/${id}`, payload).then(response => {
           commit('updateSuccess', response)
           return response
         }).catch(error => {
