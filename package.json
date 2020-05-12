@@ -2,6 +2,7 @@
   "name": "store-module-test",
   "version": "0.0.7",
   "description": "test publish",
+  "keywords": ["vue", "vuex", "store", "vuex store", "generic", "generic store"],
   "main": "dist/storeModule.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -11,14 +12,13 @@
     "type": "git",
     "url": "git+https://github.com/DouglasCalora/store-module-test.git"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Douglas Calora",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/DouglasCalora/store-module-test/issues"
   },
   "homepage": "https://github.com/DouglasCalora/store-module-test#readme",
   "dependencies": {
-    "axios": "^0.19.2",
     "vue": "^2.6.11"
   },
   "devDependencies": {
