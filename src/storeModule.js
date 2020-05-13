@@ -365,7 +365,7 @@ export default class {
     if (hasDestroy) {
       actions.destroy = ({ commit }, { id, params } = {}) => {
         commit('destroyStart')
-  
+
         return api.delete(`/${resource}/${id}/`, { params }).then(response => {
           commit('destroySuccess', id)
           return response

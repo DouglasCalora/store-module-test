@@ -59,3 +59,16 @@ storeModule.createModule(
   }
 )
 ```
+
+### Methods
+
+|  Name | API Method | Arguments | description |
+| ------------ | ------------ | ------------ | ------------ |
+| `create` | `POST` | `{ payload, url }`  | Creates an object and return it. |
+| `destroy` | `DELETE`  | `{ id, params }`  | Deletes an object and return it.  |
+| `fetchFilters` | `GET`  | `{ params, url }` | Returns filters from an endpoint. Used for dynamic filters. |
+| `fetchForm` | `GET` | `{ id, params, url }` | Returns an object from `/new` if no `resource` or `url` is passed   |
+| `fetchList` | `GET` | `{ filters = {}, increment, ordering = [], page = 1, limit, search, url }` | Returns a list. |
+| `fetchSingle` | `GET` | `{ form, id, params, url }` | Returns an object. |
+| `replace` | `PUT` | `{ id, payload, url }` | Update fields in an object. |
+| `UPDATE` | `PATCH` | `{ id, payload }` | Update all fields in an object. |
