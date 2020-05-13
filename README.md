@@ -71,4 +71,4 @@ storeModule.createModule(
 | `fetchList` | `GET` | `{ filters = {}, increment, ordering = [], page = 1, limit, search, url }` | Returns a list. |
 | `fetchSingle` | `GET` | `{ form, id, params, url }` | Returns an object. |
 | `replace` | `PUT` | `{ id, payload, url }` | Update fields in an object. |
-| `UPDATE` | `PATCH` | `{ id, payload }` | Update all fields in an object. |
+| `update` | `PATCH` | `{ id, payload }` | Update all fields in an object. |
