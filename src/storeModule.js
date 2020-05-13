@@ -3,7 +3,7 @@ import Vue from 'vue'
 export default class {
   constructor (options = {}) {
     if (!options.apiService) {
-      throw new Error('Please provide an API like axios')
+      throw new Error('Please provide an API service.')
     }
 
     // set api config
